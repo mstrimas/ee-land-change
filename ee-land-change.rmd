@@ -1,11 +1,11 @@
 ---
-title: "Land Cover Change Mapping with Earth Engine"
+title: "Land-cover Change Mapping with Earth Engine"
 output:
   html_document:
     keep_md: true
 ---
 
-[Google Earth Engine](https://earthengine.google.com/) is a [cloud computing](https://en.wikipedia.org/wiki/Cloud_computing) platform for planetary-scale remote sensing analyses. It provides access to a multi-petabyte catalog of satellite imagery and geospatial datasets, including almost the entire catalogs of Landsat, MODIS, and Sentinel imagery, as well as derived products such as NDVI, land cover classifications, and forest change maps. In addition, Earth Engine allows users to take advantage of Google's powerful computing infrastructure to process this imagery.
+[Google Earth Engine](https://earthengine.google.com/) is a [cloud computing](https://en.wikipedia.org/wiki/Cloud_computing) platform for planetary-scale remote sensing analyses. It provides access to a multi-petabyte catalog of satellite imagery and geospatial datasets, including almost the entire catalogs of Landsat, MODIS, and Sentinel imagery, as well as derived products such as NDVI, land-cover classifications, and forest change maps. In addition, Earth Engine allows users to take advantage of Google's powerful computing infrastructure to process this imagery.
 
 One of the earliest, and highest profile, applications of Earth Engine was the production of a [global forest change map](https://earthenginepartners.appspot.com/science-2013-global-forest/download_v1.2.html) by Matt Hansen and his team at University of Maryland. In this tutorial, we'll demonstrate the use of Earth Engine by conducting a similar analysis, but at a much smaller scale. We'll map forest cover change between 2001 and 2011 within a single Landsat scene in Brazil.
 
@@ -165,34 +165,32 @@ Once you're done, scroll up to the top of the code editor and you'll see a new s
 
 ## Extract cell values
 
-Finally, we need to combine these four training layers into one and extract the imagery cell values from within the polygons. This will produce a single table that associates pixels of each class with the spectral band values in those pixels. It's likely that when you selected polygons, some classes, such as unchanged forest, were easy to find examples of and therefore the training polygons for these classes cover a much larger area. Ideally we'd like the same number of training cells for each class, so at this point we'll also sub-sample the data in attempt to get even class sizes. Add the following code to the end of the script you already have.
+Finally, we need to combine these four training layers into one and extract the imagery cell values from within the polygons. This will produce a single table that associates pixels of each class with the spectral band values in those pixels. It's likely that when you selected polygons, some classes, such as unchanged forest, were easy to find examples of and therefore the training polygons for these classes cover a much larger area. Ideally we'd like the same number of training cells for each class. Furthermore, Earth Engine imposes usage limits and, if the training polygons contain too many cells, these limits will be exceeded and an error will be returned. To address this, we'll subsample within the polygons. Add the following code to the end of the script you already have.
 
 ```javascript
-// extract cell values within training polygons
-// subsample cells so that all classes have about 1500 values
+// subsample training polygons with random points
+// this ensures all classes have same sample size
+// also EE can't handle too many cells at once
 var trainingLayers = [forest, forestLoss, nonforest, forestGain];
-var samples = [];
-var n = 1500;
+var n = 500;
 // loop over training layers
 for (var i = 0; i < trainingLayers.length; i++) { 
-    // extract cell values from within polygons
-    samples[i] = combined.sampleRegions({
-      collection: trainingLayers[i],
-      // keep class attribute from the polygons.
-      properties: ['class'],
-      // set the scale to get landsat pixels in the polygons.
-      scale: 30
-    });
-    // subsample to only have 1500 cells per class
-    samples[i] = samples[i].randomColumn('r');
-    var cutoff = n / samples[i].size().getInfo();
-    samples[i] = samples[i].filter(ee.Filter.lte('r', cutoff));
-    // combine training regions
-    if (i === 0) {
-      var trainingData = samples[i];
-    } else {
-      trainingData = trainingData.merge(samples[i]);
-    }
+  // sample points within training polygons
+  var pts = ee.FeatureCollection
+    .randomPoints(trainingLayers[i].geometry(), n);
+  // add class
+  var thisClass = trainingLayers[i].get('class');
+  pts = pts.map(function(f) {
+    return f.set({class: thisClass});
+  });
+  // extract raster cell values
+  var training = combined.sampleRegions(pts, ['class'], 30);
+  // combine trainging regions together
+  if (i === 0) {
+    var trainingData = training;
+  } else {
+    trainingData = trainingData.merge(training);
+  }
 }
 ```
 
@@ -255,6 +253,6 @@ In this case, our accuracy was quite good across all the classes, however, note 
 
 ## Conclusion
 
-In this tutorial we used supervised classification to build a forest change map for a single Landsat scene in Brazil. However, this only scratches the surface of what's possible with Earth Engine. We could have extended our analysis to include a much larger region or to study land change in a different geographic location or biome. And, the applications aren't limited to land cover change in the context of conservation, Earth Engine is broadly applicable to any task requiring analysis of spatiotemporal trends on the Earth's surface.
+In this tutorial we used supervised classification to build a forest change map for a single Landsat scene in Brazil. However, this only scratches the surface of what's possible with Earth Engine. We could have extended our analysis to include a much larger region or to study land change in a different geographic location or biome. And, the applications aren't limited to land-cover change in the context of conservation, Earth Engine is broadly applicable to any task requiring analysis of spatiotemporal trends on the Earth's surface.
 
-To learn more about Earth Engine complete the [Introduction to Earth Engine tutorial](https://developers.google.com/earth-engine/tutorials) if you haven't already. Then consult the [Earth Engine Guides](https://developers.google.com/earth-engine/), which provides excellent tutorials on all the major funcationality of Earth Engine. Finally, if at any point you get stuck, try reaching out to the [Earth Engine Google Group](https://groups.google.com/forum/#!forum/google-earth-engine-developers) for help.
+The [full script](https://code.earthengine.google.com/b2032d825436fe7e8018c3b64610cd89) for this tutorial is online. To learn more about Earth Engine complete the [Introduction to Earth Engine tutorial](https://developers.google.com/earth-engine/tutorials) if you haven't already. Then consult the [Earth Engine Guides](https://developers.google.com/earth-engine/), which provides excellent tutorials on all the major funcationality of Earth Engine. Finally, if at any point you get stuck, try reaching out to the [Earth Engine Google Group](https://groups.google.com/forum/#!forum/google-earth-engine-developers) for help.
