@@ -138,7 +138,8 @@ knitr::kable(
   data.frame(class = 0:3,
              name = c("forest", "forestLoss", "nonforest", "forestGain"),
              description = c("forest in 2000 and 2011", "forest loss", 
-                             "non-forest in 2000 and 2011", "forest gain"))
+                             "non-forest in 2000 and 2011", "forest gain")),
+  format = "markdown"
 )
 ```
 

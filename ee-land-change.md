@@ -129,12 +129,12 @@ Try identifying a deforested area using the multi-date image, then turn this ima
 We're going to perform a supervised forest change classification using the [random forests](https://en.wikipedia.org/wiki/Random_forest) algorithm. To do so, we need to provide this algorithm with training data, i.e. we need to delineate areas of known fate to characterized the spectral signatures of the different classes. In particular, we're interested in the following 4 classes:
 
 
- class  name         description                 
-------  -----------  ----------------------------
-     0  forest       forest in 2000 and 2011     
-     1  forestLoss   forest loss                 
-     2  nonforest    non-forest in 2000 and 2011 
-     3  forestGain   forest gain                 
+| class|name       |description                 |
+|-----:|:----------|:---------------------------|
+|     0|forest     |forest in 2000 and 2011     |
+|     1|forestLoss |forest loss                 |
+|     2|nonforest  |non-forest in 2000 and 2011 |
+|     3|forestGain |forest gain                 |
 
 Earth Engine provides a tool for drawing polygons directly on the map, which we'll use to delineate polygons for each of the four classes. The goal is to capture as much of the variability within the class and possible, so we'll try for 4-6 polygons for each class capturing the full diversity of the class. To start, click on the polygon tool on the top left corner of the map, which creates a new polygon layer.
 
